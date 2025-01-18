@@ -70,7 +70,7 @@ async def send_files(client, message):
             file_size_mb = round(file_size / (1024 * 1024), 2) if isinstance(file_size, int) else file_size
 
             # Create the message caption
-            file_message = f"**{file_name}**\n📦 Size: {file_size_mb} MB\n\n{caption}"
+            file_message = f"**{file_name}**\n📦 Size: {file_size_mb} MB"
 
             # Detect file type based on file extension or metadata
             if file_id:
