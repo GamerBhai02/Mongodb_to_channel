@@ -6,11 +6,12 @@ import asyncio
 import logging
 import base64
 from pyrogram.file_id import FileId
-from struct import pack
+from struct import pack, unpack  # ✅ FIXED
 from info import *
+
 # Global variables
 cancel_process = False
-skip_count = 0  # Default skip count
+skip_count = 0
 failed = 0
 total = 0
 
@@ -19,33 +20,20 @@ def get_status_message(index, skip_count, failed, e_value=None):
     global total
     total += 1
     status = f"""
-╔════❰ ꜰꜱʙᴏᴛᴢ - {total} ❱═❍⊱❁۪۪
-║╭━━━━━━━━━━━━━━━➣
+╔════❰ ʙᴏᴛᴢ - {total} ❱═❍⊱❁۪۪
 ║┣⪼<b>🕵 ғᴇᴄʜᴇᴅ Msɢ :</b> <code>{index}</code>
 ║┣⪼<b>✅ Cᴏᴍᴩʟᴇᴛᴇᴅ:</b> <code>{(index-failed)-skip_count}</code>
 ║┣⪼<b>🪆 Sᴋɪᴩᴩᴇᴅ Msɢ :</b> <code>{skip_count}</code>
 ║┣⪼<b>⚠️ Fᴀɪʟᴇᴅ:</b> <code>{failed}</code>
 ║┣⪼<b>📊 Cᴜʀʀᴇɴᴛ Sᴛᴀᴛᴜs:</b> <code>{'Sleeping ' + str(e_value) if e_value else 'Sending Files'}</code>
-║╰━━━━━━━━━━━━━━━➣ 
-╚════❰ ꜰꜱʙᴏᴛᴢ ❱══❍⊱❁۪۪
+╚════❰ ʙᴏᴛᴢ ❱══❍⊱❁۪۪
 """
     return status
 
 def unpack_new_file_id(new_file_id):
-    """Decodes `_id` from MongoDB into a usable `file_id` and `file_ref`."""
+    """Decodes `_id` from MongoDB into a usable `file_id`."""
     decoded = FileId.decode(new_file_id)
-    file_id = base64.urlsafe_b64encode(
-        pack(
-            "<iiqq",
-            int(decoded.file_type),
-            decoded.dc_id,
-            decoded.media_id,
-            decoded.access_hash
-        )
-    ).decode().rstrip("=")
-
-    file_ref = base64.urlsafe_b64encode(decoded.file_reference).decode().rstrip("=")
-    return file_id, file_ref
+    return decoded.file_id  # ✅ Directly return valid file_id
 
 @Client.on_message(filters.command("setskip"))
 async def set_skip(client, message):
@@ -107,7 +95,7 @@ async def send_files(client, message):
         index += 1
         try:
             # Decode `_id` to get `file_id`
-            file_id, file_ref = unpack_new_file_id(file["_id"])
+            file_id = unpack_new_file_id(file["_id"])  # ✅ FIXED: Only file_id needed
             file_name = file.get("file_name", "Unknown File Name")
             file_size = file.get("file_size", 0)
             file_type = file.get("file_type", "document")  # Default to document
@@ -117,15 +105,8 @@ async def send_files(client, message):
             size_str = f"{round(file_size / (1024 * 1024), 2)} MB"
             file_caption = f"📌 <b>{file_name}</b>\n📦 Size: <code>{size_str}</code>\n\n{caption}"
 
-            # Send Cached File Based on Type (No need for stream link)
-            if file_type == "photo":
-                await client.send_cached_media(chat_id=CHANNEL_ID, file_id=file_id, caption=file_caption)
-            elif file_type == "video":
-                await client.send_cached_media(chat_id=CHANNEL_ID, file_id=file_id, caption=file_caption)
-            elif file_type == "audio":
-                await client.send_cached_media(chat_id=CHANNEL_ID, file_id=file_id, caption=file_caption)
-            else:
-                await client.send_cached_media(chat_id=CHANNEL_ID, file_id=file_id, caption=file_caption)
+            # Send Cached File Based on Type
+            await client.send_cached_media(chat_id=CHANNEL_ID, file_id=file_id, caption=file_caption)  # ✅ FIXED
 
         except FloodWait as e:
             logging.warning(f'Flood wait of {e.value} seconds detected')
