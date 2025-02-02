@@ -6,7 +6,8 @@ import asyncio
 import logging
 import base64
 from pyrogram.file_id import FileId
-
+from struct import pack
+from info import *
 # Global variables
 cancel_process = False
 skip_count = 0  # Default skip count
