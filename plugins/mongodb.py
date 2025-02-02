@@ -6,7 +6,7 @@ import asyncio
 import logging
 import base64
 from pyrogram.file_id import FileId
-from struct import pack, unpack  # ✅ FIXED
+from struct import pack, unpack
 from info import *
 
 # Global variables
@@ -20,20 +20,19 @@ def get_status_message(index, skip_count, failed, e_value=None):
     global total
     total += 1
     status = f"""
-╔════❰ ʙᴏᴛᴢ - {total} ❱═❍⊱❁۪۪
+╔════❰ ꜰꜱʙᴏᴛᴢ - {total} ❱═❍⊱❁۪۪
 ║┣⪼<b>🕵 ғᴇᴄʜᴇᴅ Msɢ :</b> <code>{index}</code>
 ║┣⪼<b>✅ Cᴏᴍᴩʟᴇᴛᴇᴅ:</b> <code>{(index-failed)-skip_count}</code>
 ║┣⪼<b>🪆 Sᴋɪᴩᴩᴇᴅ Msɢ :</b> <code>{skip_count}</code>
 ║┣⪼<b>⚠️ Fᴀɪʟᴇᴅ:</b> <code>{failed}</code>
 ║┣⪼<b>📊 Cᴜʀʀᴇɴᴛ Sᴛᴀᴛᴜs:</b> <code>{'Sleeping ' + str(e_value) if e_value else 'Sending Files'}</code>
-╚════❰ ʙᴏᴛᴢ ❱══❍⊱❁۪۪
+╚════❰ ꜰꜱʙᴏᴛᴢ ❱══❍⊱❁۪۪
 """
     return status
 
-def unpack_new_file_id(new_file_id):
-    """Decodes `_id` from MongoDB into a usable `file_id`."""
-    decoded = FileId.decode(new_file_id)
-    return decoded.file_id  # ✅ Directly return valid file_id
+def unpack_new_file_id(encoded_file_id):
+    """Decodes the stored `_id` to get `file_id`."""
+    return encoded_file_id  # ✅ MongoDB `_id` should already be an encoded `file_id`
 
 @Client.on_message(filters.command("setskip"))
 async def set_skip(client, message):
@@ -94,18 +93,17 @@ async def send_files(client, message):
 
         index += 1
         try:
-            # Decode `_id` to get `file_id`
-            file_id = unpack_new_file_id(file["_id"])  # ✅ FIXED: Only file_id needed
+            # Extract the stored `file_id`
+            file_id = unpack_new_file_id(file["_id"])  # ✅ FIXED: Use stored encoded `file_id`
             file_name = file.get("file_name", "Unknown File Name")
             file_size = file.get("file_size", 0)
-            file_type = file.get("file_type", "document")  # Default to document
             caption = file.get("caption", "")
 
             # Format File Caption
             size_str = f"{round(file_size / (1024 * 1024), 2)} MB"
             file_caption = f"📌 <b>{file_name}</b>\n📦 Size: <code>{size_str}</code>\n\n{caption}"
 
-            # Send Cached File Based on Type
+            # Send Cached File
             await client.send_cached_media(chat_id=CHANNEL_ID, file_id=file_id, caption=file_caption)  # ✅ FIXED
 
         except FloodWait as e:
@@ -118,10 +116,13 @@ async def send_files(client, message):
             logging.error(f'Failed to send file: {e}')
             failed += 1
 
-        # Update status message
+        # Update status message only if it has changed
         new_status_message = get_status_message(index, skip_count, failed)
         if status_message.text != new_status_message:
-            await status_message.edit_text(new_status_message, reply_markup=keyboard)
+            try:
+                await status_message.edit_text(new_status_message, reply_markup=keyboard)
+            except Exception:
+                pass  # Ignore "MESSAGE_NOT_MODIFIED" error
 
     await status_message.edit_text("✅ All files have been sent successfully!")
 
