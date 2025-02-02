@@ -87,7 +87,6 @@ async def send_files(client, message):
         index += 1
         try:
             file_id = file["_id"]  # Use stored file ID directly
-            file_ref = file.get("file_ref")  # Fetch file reference
             file_name = file.get("file_name", "Unknown File Name")
             file_size = file.get("file_size", "Unknown Size")
             file_type = file.get("file_type", "document")  # Default to document
@@ -96,15 +95,15 @@ async def send_files(client, message):
             file_size_mb = round(file_size / (1024 * 1024), 2) if isinstance(file_size, int) else file_size
             file_message = f"**{file_name}**\n📦 Size: {file_size_mb} MB\n\n{caption}"
 
-            # Send file based on type
+            # Send file based on type (REMOVE `file_ref` ARGUMENT)
             if file_type == "photo":
                 await client.send_photo(chat_id=CHANNEL_ID, photo=file_id, caption=file_message)
             elif file_type == "video":
-                await client.send_video(chat_id=CHANNEL_ID, video=file_id, caption=file_message, file_ref=file_ref)
+                await client.send_video(chat_id=CHANNEL_ID, video=file_id, caption=file_message)  # ✅ FIXED
             elif file_type == "audio":
-                await client.send_audio(chat_id=CHANNEL_ID, audio=file_id, caption=file_message, file_ref=file_ref)
+                await client.send_audio(chat_id=CHANNEL_ID, audio=file_id, caption=file_message)  # ✅ FIXED
             else:
-                await client.send_document(chat_id=CHANNEL_ID, document=file_id, caption=file_message, file_ref=file_ref)
+                await client.send_document(chat_id=CHANNEL_ID, document=file_id, caption=file_message)  # ✅ FIXED
 
         except FloodWait as e:
             logging.warning(f'Flood wait of {e.value} seconds detected')
