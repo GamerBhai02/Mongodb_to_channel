@@ -103,7 +103,7 @@ async def send_files(client, message):
 
         index += 1
         try:
-            file_id = file.get("_id")
+            file_id = file.get("file_ref")
             if not file_id:
                 raise ValueError("Invalid file ID")
 
