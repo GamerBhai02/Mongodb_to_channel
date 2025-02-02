@@ -79,6 +79,7 @@ async def send_files(client, message):
 
     fsd = await client.ask(chat_id=message.from_user.id, text="Now Send Me The Destination Channel ID Or Username\nMake Sure That Bot Is Admin In The Destination Channel")
     CHANNEL_ID = fsd.text.strip()
+    CHANNEL_ID = int(CHANNEL_ID)
 
     # Check if skip count is valid
     file_count = movies_collection.count_documents({})
